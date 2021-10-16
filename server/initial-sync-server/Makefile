@@ -14,7 +14,6 @@ ssh-keygen:
 
 ## ssh
 ssh:
-	# ssh -i "keys/id_rsa" 34.229.92.187
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS}
 
 ## ssh-cmd-disk
