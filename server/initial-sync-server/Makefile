@@ -4,6 +4,7 @@ AWS_PROFILE=prd-non-tf-905234897161
 AWS_ACCOUNT_ID=905234897161
 AWS_REGION=us-east-1
 PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
+ETH_DATA_DIR=/home/ec2-user/ethereum
 
 ## Create public/private ssh keys
 ssh-keygen:
@@ -16,20 +17,23 @@ ssh:
 	# ssh -i "keys/id_rsa" 34.229.92.187
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS}
 
+## ssh-cmd-disk
 ssh-cmd-disk:
 	@echo "Chaindata usage:"
-	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "du /home/ec2-user/.ethereum -h"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "du ${ETH_DATA_DIR} -h"
 	@echo "Free space:"
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "df -h"
 
+## ssh-cmd-geth
 ssh-cmd-geth:
 	@echo "geth status:"
-	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach --exec 'eth.syncing.highestBlock - eth.syncing.currentBlock'"
-	# ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach --exec 'eth.syncing.highestBlock - eth.syncing.currentBlock'"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach ipc:${ETH_DATA_DIR}/geth.ipc --exec eth.syncing"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach ipc:${ETH_DATA_DIR}/geth.ipc --exec 'eth.syncing.highestBlock - eth.syncing.currentBlock'"
 
+## ssh-cmd-geth-logs
 ssh-cmd-geth-logs:
 	@echo "geth logs:"
-	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "tail -n50 /home/ec2-user/geth_nohup.out"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "tail -n20 /home/ec2-user/geth_nohup.out"
 
 
 # Terraform

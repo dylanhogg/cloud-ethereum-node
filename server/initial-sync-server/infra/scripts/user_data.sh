@@ -19,10 +19,10 @@ tar -xzf geth-linux-arm64-1.10.9-eae3b194.tar.gz
 mv geth-linux-arm64-1.10.9-eae3b194/geth /home/ec2-user/geth
 chown ec2-user:ec2-user /home/ec2-user/geth
 
-mkdir /home/ec2-user/.ethereum
-chown ec2-user:ec2-user /home/ec2-user/.ethereum
+mkdir /home/ec2-user/ethereum
+chown ec2-user:ec2-user /home/ec2-user/ethereum
 
-nohup sudo -u ec2-user /home/ec2-user/geth --datadir /home/ec2-user/.ethereum --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
+nohup sudo -u ec2-user /home/ec2-user/geth --datadir /home/ec2-user/ethereum --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
 
 # BLOG: ./geth --datadir /mnt/nvm/ether --syncmode=fast --maxpeers=100 --cache=28000
 
