@@ -3,6 +3,7 @@ APP_NAME=cloud-ethereum-node
 AWS_PROFILE=prd-non-tf-905234897161
 AWS_ACCOUNT_ID=905234897161
 AWS_REGION=us-east-1
+PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
 
 ## Create public/private ssh keys
 ssh-keygen:
@@ -13,7 +14,23 @@ ssh-keygen:
 ## ssh
 ssh:
 	# ssh -i "keys/id_rsa" 34.229.92.187
-	ssh -i "./keys/id_rsa" ec2-user@ec2-54-163-207-174.compute-1.amazonaws.com
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS}
+
+ssh-cmd-disk:
+	@echo "Chaindata usage:"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "du /home/ec2-user/.ethereum -h"
+	@echo "Free space:"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "df -h"
+
+ssh-cmd-geth:
+	@echo "geth status:"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach --exec 'eth.syncing.highestBlock - eth.syncing.currentBlock'"
+	# ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "/home/ec2-user/geth attach --exec 'eth.syncing.highestBlock - eth.syncing.currentBlock'"
+
+ssh-cmd-geth-logs:
+	@echo "geth logs:"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "tail -n50 /home/ec2-user/geth_nohup.out"
+
 
 # Terraform
 
@@ -31,7 +48,8 @@ tf-plan:
 
 ## TF apply
 tf-apply: tf-plan
-	cd infra; terraform apply -var-file=variables.tfvars; cd -
+	cd infra; terraform apply -var-file=variables.tfvars -auto-approve; cd -
+	# cd infra; terraform apply -var-file=variables.tfvars; cd -
 
 ## TF output
 tf-output:
@@ -39,7 +57,8 @@ tf-output:
 
 ## TF destroy
 tf-destroy:
-	cd infra; terraform destroy -var-file=variables.tfvars; cd -
+	cd infra; terraform destroy -var-file=variables.tfvars -auto-approve; cd -
+	# cd infra; terraform destroy -var-file=variables.tfvars; cd -
 
 
 #################################################################################
