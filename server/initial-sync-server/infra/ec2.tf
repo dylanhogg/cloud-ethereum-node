@@ -1,5 +1,5 @@
 resource "aws_security_group" "initial_sync_server_sg" {
-  name              = "initial_sync_server"
+  name              = "ethereum_initial_sync_server"
   description       = "initial_sync_server"
   vpc_id            = data.aws_vpc.default_vpc.id
   tags              = var.common_tags
@@ -38,7 +38,7 @@ resource "aws_security_group" "initial_sync_server_sg" {
 }
 
 resource "aws_key_pair" "initial_sync_server_key" {
-  key_name          = "initial_sync_server_key"
+  key_name          = "ethereum_initial_sync_server_key"
   public_key        = file("../keys/id_rsa.pub")
   tags              = var.common_tags
 }
@@ -50,9 +50,9 @@ resource "aws_instance" "initial_sync_server" {
   vpc_security_group_ids = [aws_security_group.initial_sync_server_sg.id]
 
   associate_public_ip_address = true
-  key_name = aws_key_pair.initial_sync_server_key.key_name
+  key_name          = aws_key_pair.initial_sync_server_key.key_name
 
-  user_data         = file("scripts/initial_sync_server_userdata.sh")
+  user_data         = file("scripts/user_data.sh")
 
   tags              = var.common_tags
 }
