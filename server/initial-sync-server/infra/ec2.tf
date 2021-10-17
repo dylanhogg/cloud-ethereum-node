@@ -51,8 +51,7 @@ resource "aws_instance" "initial_sync_server" {
 
   associate_public_ip_address = true
   key_name          = aws_key_pair.initial_sync_server_key.key_name
-
-  user_data         = file("scripts/user_data.sh")
+  user_data         = file(var.initial_sync_server_user_data_file)
 
   tags              = var.common_tags
 }

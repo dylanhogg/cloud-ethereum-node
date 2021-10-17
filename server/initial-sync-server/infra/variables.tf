@@ -18,4 +18,8 @@ variable "initial_sync_server_instance_type" {
   type=string
 }
 
+variable "initial_sync_server_user_data_file" {
+  type=string
+}
+
 variable "common_tags" { }

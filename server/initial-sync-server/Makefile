@@ -5,6 +5,7 @@ AWS_ACCOUNT_ID=905234897161
 AWS_REGION=us-east-1
 PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
 ETH_DATA_DIR=/home/ec2-user/ethereum
+# ETH_DATA_DIR=/mnt/nvm/ethereum
 
 ## Create public/private ssh keys
 ssh-keygen:
