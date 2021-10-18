@@ -9,7 +9,15 @@ resource "aws_security_group" "initial_sync_server_sg" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    cidr_blocks     = ["0.0.0.0/0"]  # TODO: lockdown to a your ip address
+    cidr_blocks     = ["${var.public_ip4_address}/32"]  # TODO: review
+  }
+
+  ingress {
+    # rcp server http.port
+    from_port       = 8545
+    to_port         = 8545
+    protocol        = "tcp"
+    cidr_blocks     = ["${var.public_ip4_address}/32"]  # TODO: review
   }
 
   egress {

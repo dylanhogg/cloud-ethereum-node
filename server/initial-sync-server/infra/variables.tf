@@ -22,4 +22,8 @@ variable "initial_sync_server_user_data_file" {
   type=string
 }
 
+variable "public_ip4_address" {
+  type=string
+}
+
 variable "common_tags" { }

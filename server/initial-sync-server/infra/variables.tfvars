@@ -11,6 +11,7 @@ availability_zone="us-east-1b"
 initial_sync_server_ami="ami-0e341fcaad89c3650"  # Amazon Linux 2 AMI (HVM), SSD Volume Type (64-bit Arm)
 initial_sync_server_instance_type="t4g.medium"   # $0.0336/hr, 64-bit Arm, 2 vCPU, 4 GiB, EBS Only, Up to 5 Gigabit
 initial_sync_server_user_data_file="scripts/user_data_arm_t4g.sh"
+public_ip4_address="101.184.201.170"  # TODO: get dynamically?
 
 common_tags = {
   tag_version = "1.0"
