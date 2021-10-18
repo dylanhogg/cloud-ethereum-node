@@ -2,7 +2,7 @@ resource "aws_security_group" "initial_sync_server_sg" {
   name              = "ethereum_initial_sync_server"
   description       = "initial_sync_server"
   vpc_id            = data.aws_vpc.default_vpc.id
-  tags              = var.common_tags
+  tags              = merge(var.common_tags, { Name = "ethereum-initial-sync-server-sg" })
 
   ingress {
     # ssh
@@ -40,7 +40,7 @@ resource "aws_security_group" "initial_sync_server_sg" {
 resource "aws_key_pair" "initial_sync_server_key" {
   key_name          = "ethereum_initial_sync_server_key"
   public_key        = file("../keys/id_rsa.pub")
-  tags              = var.common_tags
+  tags              = merge(var.common_tags, { Name = "ethereum-initial-sync-server-key" })
 }
 
 resource "aws_instance" "initial_sync_server" {
@@ -53,5 +53,5 @@ resource "aws_instance" "initial_sync_server" {
   key_name          = aws_key_pair.initial_sync_server_key.key_name
   user_data         = file(var.initial_sync_server_user_data_file)
 
-  tags              = var.common_tags
+  tags              = merge(var.common_tags, { Name = "ethereum-initial-sync-server" })
 }
