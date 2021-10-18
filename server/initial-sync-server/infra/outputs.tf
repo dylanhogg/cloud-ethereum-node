@@ -17,3 +17,8 @@ output "public_dns" {
   description = "The public DNS for initial_sync_server"
   value       = aws_instance.initial_sync_server.public_dns
 }
+
+output "ec2_instance_id" {
+  description = "The ec2 instance for initial_sync_server"
+  value       = aws_instance.initial_sync_server.id
+}

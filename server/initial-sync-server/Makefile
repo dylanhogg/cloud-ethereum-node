@@ -3,7 +3,10 @@ APP_NAME=cloud-ethereum-node
 AWS_PROFILE=prd-non-tf-905234897161
 AWS_ACCOUNT_ID=905234897161
 AWS_REGION=us-east-1
+AWS_AZ=us-east-1b
 PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
+EC2_INSTANCE_ID=`cd infra; terraform output -raw ec2_instance_id`
+EBS_VOLUME_ID=cloud-ethereum-node-volume
 ETH_DATA_DIR=/home/ec2-user/ethereum
 # ETH_DATA_DIR=/mnt/nvm/ethereum
 
@@ -13,6 +16,7 @@ ssh-keygen:
 	ssh-keygen -t rsa -b 4096 -N '' -f ./keys/id_rsa
 	chmod 400 ./keys/id_rsa
 
+# ------------------------------------------------------------------------
 ## ssh
 ssh:
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS}
@@ -35,7 +39,31 @@ ssh-cmd-geth-logs:
 	@echo "geth logs:"
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "tail -n20 /home/ec2-user/geth_nohup.out"
 
+# ------------------------------------------------------------------------
+# AWS CLI
 
+aws-create-volume:
+	aws ec2 create-volume \
+	    --volume-type gp2 \
+	    --size 2 \
+	    --availability-zone ${AWS_AZ} \
+	    --tag-specifications 'ResourceType=volume,Tags=[{Key=app_name,Value=${APP_NAME}},{Key=volume_id,Value=${EBS_VOLUME_ID}}]'
+
+	VOLUME_ID=`aws ec2 describe-volumes --query Volumes[*].[VolumeId] --filters Name=tag-value,Values=${EBS_VOLUME_ID} --output text`; \
+	echo $${VOLUME_ID}; \
+	aws ec2 attach-volume --volume-id $${VOLUME_ID} --instance-id ${EC2_INSTANCE_ID} --device /dev/xvdf
+
+aws-delete-volume:
+	VOLUME_ID=`aws ec2 describe-volumes --query Volumes[*].[VolumeId] --filters Name=tag-value,Values=${EBS_VOLUME_ID} --output text`; \
+	echo $${VOLUME_ID}; \
+	aws ec2 detach-volume --volume-id $${VOLUME_ID}
+
+	# TODO: handle An error occurred (VolumeInUse) when calling the DeleteVolume operation
+# 	VOLUME_ID=`aws ec2 describe-volumes --query Volumes[*].[VolumeId] --filters Name=tag-value,Values=${EBS_VOLUME_ID} --output text`; \
+# 	echo $${VOLUME_ID}; \
+# 	aws ec2 delete-volume --volume-id $${VOLUME_ID}
+
+# ------------------------------------------------------------------------
 # Terraform
 
 ## TF init
