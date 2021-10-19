@@ -25,7 +25,8 @@ chown ec2-user:ec2-user $DATA_DIR
 
 # Run geth on arm64 / t4g.medium
 nohup sudo -u ec2-user /home/ec2-user/geth --datadir $DATA_DIR --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
-# /home/ec2-user/geth --datadir /home/ec2-user/ethereum --nousb --syncmode snap --exitwhensynced
+chown ec2-user:ec2-user /home/ec2-user/geth_nohup.out
+# /home/ec2-user/geth --datadir /mnt/ebs/ethereum --nousb --syncmode snap --exitwhensynced
 
 # BLOG: ./geth --datadir /mnt/nvm/ether --syncmode=fast --maxpeers=100 --cache=28000
 

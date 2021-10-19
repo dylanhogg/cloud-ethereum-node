@@ -23,7 +23,7 @@ def userdata_logs(instance_dns, n=20, logfile="/var/log/cloud-init-output.log"):
     return _run(instance_dns, f"tail -n{n} {logfile}")
 
 
-def geth_du(instance_dns, geth_dir="/mnt/ebs/ethereum"):
+def geth_du(instance_dns, geth_dir):
     du = _run(instance_dns, f"du -s {geth_dir}")
     assert len(du.split("\t")) == 2
     return int(du.split("\t")[0])
@@ -42,12 +42,33 @@ def geth_pid(instance_dns):
     return int(matches[0].strip().split(" ")[0])
 
 
-def df(instance_dns):
-    return _run(instance_dns, "df")
+def df(instance_dns, datadir_mount):
+    all_df = _run(instance_dns, "df")
+    lines = all_df.strip().split("\n")
+
+    matches = [x for x in lines if x.endswith(datadir_mount)]
+    assert len(matches) == 1
+    match = matches[0]
+    match_tabbed = "\t".join(match.split())  # Replace spaces with a tab
+
+    # Grap columns from: [Filesystem, 1K-blocks, Used, Available, Use%, Mounted on]
+    used_kb = int(match_tabbed.split("\t")[2])
+    avail_kb = int(match_tabbed.split("\t")[3])
+    avail_pct = (avail_kb*100)/(used_kb+avail_kb)
+    return used_kb, avail_kb, avail_pct
 
 
 def lsblk(instance_dns):
     return _run(instance_dns, "lsblk")
 
 
+def uptime(instance_dns):
+    return _run(instance_dns, "uptime")
+
+
+def geth_kill(instance_dns):
+    pid = geth_pid(instance_dns)
+    if pid is None:
+        logger.warning("Cannot kill geth process since it is not running")
+    return _run(instance_dns, f"kill -SIGINT {pid}")
 

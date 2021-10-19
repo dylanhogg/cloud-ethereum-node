@@ -25,6 +25,7 @@ chown ec2-user:ec2-user $DATA_DIR
 
 # Run geth on amd64 / i3.xlarge  (TODO: review --gcmode archive, --nousb)
 nohup sudo -u ec2-user /home/ec2-user/geth --datadir $DATA_DIR --nousb --syncmode snap --maxpeers 100 --cache 28000 --exitwhensynced &> /home/ec2-user/geth_nohup.out &
+chown ec2-user:ec2-user /home/ec2-user/geth_nohup.out
 
 # BLOG: ./geth --datadir /mnt/nvm/ether --syncmode=fast --maxpeers=100 --cache=28000
 

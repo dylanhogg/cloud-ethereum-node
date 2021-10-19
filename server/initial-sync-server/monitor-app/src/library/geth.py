@@ -29,19 +29,32 @@ def status(instance_dns):
         detail.append(f"geth running (pid {pid})")
         running = True
 
-    # TODO: datadir usage GiB
-    # TODO: disk free
     # TODO: disk names
     # TODO: disk lsblk
 
-    # Disk usage
-    usage_mb = ssh.geth_du(instance_dns)
+    # Uptime
+    uptime = ssh.uptime(instance_dns)
+    detail.append(f"Instance uptime: {uptime})")
+
+    # Disk usage (TODO: work out GiB vs GB)
+    geth_dir = "/mnt/ebs/ethereum"
+    usage_mb = ssh.geth_du(instance_dns, geth_dir)
     if usage_mb == 0:
         empty = True
-    detail.append(f"geth disk usage is {usage_mb/1.024e+6}GiB / {usage_mb/1.0e+6}GB")
+    detail.append(f"geth folder usage: {usage_mb/1.024e+6:.2f}GB (at at {geth_dir})")
+
+    # Disk free (TODO: work out GiB vs GB)
+    datadir_mount = "/mnt/ebs"  # i3
+    # datadir_mount = "/"  # t4g
+    used_kb, avail_kb, avail_pct = ssh.df(instance_dns, datadir_mount)
+    detail.append(f"geth mount point: Used={used_kb/1.024e+6:.2f}GB, Avail={avail_kb/1.024e+6:.2f}GB / {avail_pct:.2f}% (at {datadir_mount})")
+    if avail_pct < 20:
+        detail.append(f"WARNING: Disk available percent is {avail_pct}%")
+    if avail_pct < 1:
+        detail.append(f"CRITICAL: Disk available percent is {avail_pct}%")
 
     # Log file
-    logs = ssh.geth_logs(instance_dns, 50).lower()
+    logs = ssh.geth_logs(instance_dns, 100).lower()
     log_lines = logs.strip().split("\n")
 
     # Bad/incomplete log lines
@@ -77,6 +90,10 @@ def status(instance_dns):
         detail.append("HTTP server stopped")
     if "ipc endpoint closed" in logs:
         detail.append("IPC endpoint closed")
+    if "rewinding blockchain" in logs:
+        detail.append("Rewinding blockchain")
+    if "persisted the clean trie cache" in logs:
+        detail.append("Persisted the clean trie cache")
 
     # Good log lines
     if "synchronisation completed" in logs:

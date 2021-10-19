@@ -13,20 +13,14 @@ def manage_initial_sync_server(ec2_client):
     # if pid is None:
     #     logger.warning(f"geth not running, it may have finished or not started.")
 
+    # Careful!!
+    # ssh.geth_kill(instance_dns)
+
+    # TODO:
+    # ssh.restart_geth
+
     status, detail = geth.status(instance_dns)
     logger.info(f"\nGETH STATUS:\n{status}\n" + "\n".join(detail))
-
-    # logs = ssh.geth_logs(instance_dns, 10)
-    # logger.info(f"geth_logs = {logs}")
-
-    # df = ssh.df(instance_dns)
-    # logger.info(f"df = {df}")
-    #
-    # du = ssh.geth_du(instance_dns)
-    # logger.info(f"du = {du}")
-
-    # ps = ssh.ps(instance_dns)
-    # logger.info(f"ps = {ps}")
 
     # TODO: call rcp server http.port 8545 directly with e.g. eth.syncing
 
