@@ -7,8 +7,7 @@ AWS_AZ=us-east-1b
 PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
 EC2_INSTANCE_ID=`cd infra; terraform output -raw ec2_instance_id`
 EBS_VOLUME_ID=cloud-ethereum-node-volume
-ETH_DATA_DIR=/home/ec2-user/ethereum
-# ETH_DATA_DIR=/mnt/nvm/ethereum
+ETH_DATA_DIR=/mnt/ebs/ethereum
 
 ## Create public/private ssh keys
 ssh-keygen:
@@ -38,6 +37,16 @@ ssh-cmd-geth:
 ssh-cmd-geth-logs:
 	@echo "geth logs:"
 	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "tail -n20 /home/ec2-user/geth_nohup.out"
+
+## process
+ssh-cmd-ps:
+	@echo "geth ps:"
+	ssh -i "./keys/id_rsa" ec2-user@${PUBLIC_DNS} "ps -ux | grep geth"
+    #     [ec2-user@ip-172-31-18-201 ~]$ ps -x | grep /home/ec2-user/geth
+    #     USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+    #     1235 ?        Sl    17:23 /home/ec2-user/geth --datadir /home/ec2-user/ethereum --nousb --syncmode snap --exitwhensynced
+    #     1411 pts/0    S+     0:00 grep --color=auto /home/ec2-user/geth
+
 
 # ------------------------------------------------------------------------
 # AWS CLI

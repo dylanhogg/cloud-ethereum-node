@@ -2,19 +2,60 @@ from loguru import logger
 from pprint import pprint
 
 
-def find_ec2_instance(ec2_client, ec2_name):
-    response = ec2_client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [ec2_name]}])
+def find_ec2_instance(ec2_client, tag_name):
+    ec2_filters = [{'Name': 'tag:Name', 'Values': [tag_name]}, {'Name': 'instance-state-name', 'Values': ['running']}]
+    response = ec2_client.describe_instances(Filters=ec2_filters)
     # pprint(response)
-    assert len(response['Reservations']), "Expected 'Reservations' response to only have 1 value"
+
+    reservation_count = len(response['Reservations'])
+    if reservation_count == 0:
+        error = f"No matching instances found with tag:Name '{tag_name}'"
+        logger.error(error)
+        raise RuntimeError(error)
+
+    if reservation_count != 1:
+        error = f"Expected 'Reservations' response to only have 1 value, but was {reservation_count}"
+        logger.error(error)
+        raise RuntimeError(error)
+
+    if len(response['Reservations'][0]['Instances']) != 1:
+        error = f"Expected single matching instance with tag:Name '{tag_name}'"
+        logger.error(error)
+        raise RuntimeError(error)
 
     try:
-        instance_id = response['Reservations'][0]['Instances'][0]['InstanceId']
-    except Exception as e:
-        logger.error(f"InstanceId not found in response: {response}")
-        return None
+        instance = response['Reservations'][0]['Instances'][0]
+    except KeyError as e:
+        error = f"Instance not found in response: {response}"
+        logger.error(error)
+        raise RuntimeError(error)
 
-    logger.info(f"Found InstanceId: {instance_id}")
+    try:
+        instance_id = instance['InstanceId']
+    except KeyError as e:
+        error = f"InstanceId not found in response: {response}"
+        logger.error(error)
+        raise RuntimeError(error)
+
+    try:
+        instance_ip = instance['PublicIpAddress']
+    except KeyError as e:
+        error = f"PublicIpAddress not found in response: {response}"
+        logger.error(error)
+        raise RuntimeError(error)
+
+    try:
+        instance_dns = instance['PublicDnsName']
+    except KeyError as e:
+        error = f"PublicDnsName not found in response: {response}"
+        logger.error(error)
+        raise RuntimeError(error)
+
     assert instance_id is not None
     assert instance_id.startswith("i-")
+    assert instance_ip is not None
+    assert len(instance_ip) > 6
+    assert instance_dns is not None
+    assert instance_dns.startswith("ec2-")
 
-    return instance_id
+    return instance_id, instance_ip, instance_dns
