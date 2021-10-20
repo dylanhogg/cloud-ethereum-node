@@ -11,6 +11,12 @@ def _get_attribute(instance, key):
         raise RuntimeError(error)
 
 
+def terminate_ec2_instance(ec2_client, instance_id):
+    logger.warning(f"Requesting termination of instance_id: {instance_id}")
+    response = ec2_client.terminate_instances(InstanceIds=[instance_id])
+    logger.info(response)
+
+
 def find_ec2_instance(ec2_client, tag_name):
     ec2_filters = [{'Name': 'tag:Name', 'Values': [tag_name]}, {'Name': 'instance-state-name', 'Values': ['running']}]
     response = ec2_client.describe_instances(Filters=ec2_filters)
@@ -18,8 +24,7 @@ def find_ec2_instance(ec2_client, tag_name):
 
     reservation_count = len(response['Reservations'])
     if reservation_count == 0:
-        logger.warning(f"No matching instances found with tag:Name '{tag_name}'")
-        return False, None, None, None
+        return False, None, None, None, None
 
     if reservation_count != 1:
         error = f"Expected 'Reservations' response to only have 1 value, but was {reservation_count}"
