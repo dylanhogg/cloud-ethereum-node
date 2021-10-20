@@ -12,13 +12,13 @@ resource "aws_security_group" "initial_sync_server_sg" {
     cidr_blocks     = ["${var.local_public_ip4_address}/32"]  # TODO: review
   }
 
-  ingress {
-    # rcp server http.port
-    from_port       = 8545
-    to_port         = 8545
-    protocol        = "tcp"
-    cidr_blocks     = ["${var.local_public_ip4_address}/32"]  # TODO: review
-  }
+//  ingress {
+//    # rcp server http.port
+//    from_port       = 8545
+//    to_port         = 8545
+//    protocol        = "tcp"
+//    cidr_blocks     = ["${var.local_public_ip4_address}/32"]  # TODO: review
+//  }
 
   egress {
     # Download geth binary

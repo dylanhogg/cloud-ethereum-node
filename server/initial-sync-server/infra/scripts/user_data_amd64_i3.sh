@@ -6,7 +6,7 @@ DATA_DIR="/mnt/ebs/ethereum"
 
 echo "user_data started on amd64" >> /home/ec2-user/user_data.log
 echo `date` >> /home/ec2-user/user_data.log
-echo $DATA_DIR >> /home/ec2-user/user_data.log
+echo "datadir: $DATA_DIR" >> /home/ec2-user/user_data.log
 
 # Download amd64 geth
 wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.9-eae3b194.tar.gz
