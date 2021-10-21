@@ -33,6 +33,7 @@ def status(instance_dns, datadir_mount, data_dir):
 
     # Process ID
     pid = ssh.geth_pid(instance_dns)
+    perc_block = -1
     if pid is None:
         detail.append("geth stopped (no pid)")
     else:
@@ -40,9 +41,9 @@ def status(instance_dns, datadir_mount, data_dir):
         detail.append(f"geth running: pid {pid}")
         success, current_block, highest_block = ssh.rpc_syncing(instance_dns, data_dir)
         if success:
-            diff = highest_block - current_block
-            perc = (current_block*100/highest_block)
-            detail.append(f"geth syncing: current {current_block:,}, highest {highest_block:,}, diff {diff:,}, {perc:.2f}%")
+            diff_block = highest_block - current_block
+            perc_block = (current_block*100/highest_block)
+            detail.append(f"geth syncing: current {current_block:,}, highest {highest_block:,}, diff {diff_block:,}, {perc_block:.2f}%")
         else:
             detail.append(f"geth syncing: false")
 
@@ -134,4 +135,4 @@ def status(instance_dns, datadir_mount, data_dir):
         geth_status = GethStatusEnum.stopped_success
 
     detail.insert(1, geth_status.name)
-    return geth_status, avail_pct, detail
+    return geth_status, avail_pct, detail, perc_block

@@ -1,46 +1,65 @@
 import re
+import time
 import subprocess
 from loguru import logger
 
 
+# TODO: make this module a class
 geth_executable = "/home/ec2-user/geth"
 
 
-def _run(instance_dns, cmd, user="ec2-user", key="../keys/id_rsa"):
+def run(instance_dns, cmd, user="ec2-user", key="../keys/id_rsa", verbose=False):
     # TODO: consider https://stackoverflow.com/questions/3586106/perform-commands-over-ssh-with-python
+
+    if verbose:
+        logger.info(f"Running ssh cmd: {cmd}")
     ssh_cmd = f'ssh -o "StrictHostKeyChecking no" -i "{key}" {user}@{instance_dns} "{cmd}"'
     out, err = subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
+    if "connection refused" in err.decode().lower():
+        logger.warning(f"Connection refused for ssh cmd: '{cmd}': {err.decode()}")
+        logger.info(f"Pausing before retrying ssh cmd: '{cmd}'")
+        time.sleep(60)
+        out, err = subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        if "connection refused" in err.decode().lower():
+            raise RuntimeError(f"Connection refused (again) for ssh cmd: '{cmd}': {err.decode()}")
+
     if "timed out" in err.decode().lower():
-        raise RuntimeError(f"ssh timed out, check instance_dns and port 22 allowed from your IP: {err.decode()}")
+        raise RuntimeError(f"ssh timed out, check instance_dns and port 22 ingress allowed: {err.decode()}")
+
     if len(err.decode()) > 0:
         logger.warning(err.decode())
 
-    return out.decode().strip()
+    result = out.decode().strip()
+    if verbose and len(result) > 0:
+        logger.info(f"ssh cmd {cmd} result: {result}")
+    return result
 
 
 def _rpc(instance_dns, data_dir, ethjs):
     # TODO: call rcp server http.port 8545 directly - needs geth to startup with different options
     cmd = f"{geth_executable} attach ipc:{data_dir}/geth.ipc --exec '{ethjs}'"
-    return _run(instance_dns, cmd)
+    return run(instance_dns, cmd)
 
 
-def geth_version(instance_dns):
+def geth_version(instance_dns):  # TODO: can return "" if not running yet so do retry in this case
     cmd = f"{geth_executable} version"
-    version_info = _run(instance_dns, cmd)
-    matches = [x for x in version_info.split("\n") if "version" in x.lower()]
+    response = run(instance_dns, cmd)
+    if len(response) == 0:
+        return "Unknown"
+    matches = [x for x in response.split("\n") if "version" in x.lower()]
     if len(matches) == 0:
-        raise RuntimeError(f"Couldn't find verion information from 'geth version': {version_info}")
+        raise RuntimeError(f"Couldn't find verion information from 'geth version': {response}")
     return matches[0].lower().replace("version:", "").strip()
 
 
 def ps(instance_dns, all_users=False):
     cmd = "ps -aux" if all_users else "ps -ux"
-    return _run(instance_dns, cmd)
+    return run(instance_dns, cmd)
 
 
 def geth_pid(instance_dns):
-    procs = _run(instance_dns, "ps -e -o pid,cmd | grep geth")
+    procs = run(instance_dns, "ps -e -o pid,cmd | grep geth")
     lines = procs.strip().split("\n")
 
     # Match `--datadir` to skip grep command, and exclude `sudo` to skip parent process
@@ -53,31 +72,31 @@ def geth_pid(instance_dns):
 
 
 def geth_logs(instance_dns, n, logfile="/home/ec2-user/geth_nohup.out"):
-    return _run(instance_dns, f"tail -n{n} {logfile}")
+    return run(instance_dns, f"tail -n{n} {logfile}")
 
 
 def userdata_logs(instance_dns, n, logfile="/var/log/cloud-init-output.log"):
-    return _run(instance_dns, f"tail -n{n} {logfile}")
+    return run(instance_dns, f"tail -n{n} {logfile}")
 
 
 def du(instance_dns, human=False):
     cmd = "du -h" if human else "du"
-    return _run(instance_dns, cmd)
+    return run(instance_dns, cmd)
 
 
 def geth_du(instance_dns, data_dir):
-    usage = _run(instance_dns, f"du -s {data_dir}")
+    usage = run(instance_dns, f"du -s {data_dir}")
     assert len(usage.split("\t")) == 2
     return int(usage.split("\t")[0])
 
 
 def df(instance_dns, human=False):
     cmd = "df -h" if human else "df"
-    return _run(instance_dns, cmd)
+    return run(instance_dns, cmd)
 
 
 def df_mount(instance_dns, datadir_mount):
-    all_df = _run(instance_dns, "df")
+    all_df = run(instance_dns, "df")
     lines = all_df.strip().split("\n")
 
     matches = [x for x in lines if x.endswith(datadir_mount)]
@@ -97,18 +116,18 @@ def df_mount(instance_dns, datadir_mount):
 
 
 def lsblk(instance_dns):
-    return _run(instance_dns, "lsblk")
+    return run(instance_dns, "lsblk")
 
 
 def uptime(instance_dns):
-    return _run(instance_dns, "uptime")
+    return run(instance_dns, "uptime")
 
 
 def geth_sigint(instance_dns):
     pid = geth_pid(instance_dns)
     if pid is None:
         logger.warning("Cannot kill geth process since it is not running")
-    _run(instance_dns, f"kill -SIGINT {pid}")
+    run(instance_dns, f"kill -SIGINT {pid}")
     return pid
 
 
