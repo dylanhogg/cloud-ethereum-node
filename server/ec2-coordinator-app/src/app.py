@@ -44,24 +44,27 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
             {"Key": "meta_data_dir", "Value": data_dir},
             {"Key": "meta_size_gb", "Value": "{:.2f}".format(ebs_size_gb)},
             {"Key": "meta_datadir_gb", "Value": "{:.2f}".format(datadir_gb)},
+            {"Key": "meta_debug_run", "Value": str(debug_run)},
         ]
 
-        # Create and attach EBS volume to instance
+        logger.info(f"Create and attach {ebs_size_gb:.2f}GB EBS volume to instance {instance_id}")
         ebs_success, volume_id = ebs.create_and_attach_volume(
             ec2_client, az_name, instance_id, device=ebs_device, size_gb=ebs_size_gb, tags=ebs_tags)
         if not ebs_success:
-            raise RuntimeError(f"Failed to create/attach volume to instance {instance_id}")
+            raise RuntimeError(f"Failed to create and attach volume to instance {instance_id}")
 
-        # TODO: format and mount attached EBS
-        ssh.run(instance_dns, cmd="sudo mkdir /mnt/ebs_export/", verbose=True)
-        ssh.run(instance_dns, cmd="sudo mkfs -t ext4 /dev/xvdf", verbose=True)
-        ssh.run(instance_dns, cmd="sudo mount -t ext4 /dev/xvdf /mnt/ebs_export/", verbose=True)
-        ssh.run(instance_dns, cmd="sudo mkdir /mnt/ebs_export/ethereum", verbose=True)
-        ssh.run(instance_dns, cmd="sudo chown ec2-user:ec2-user /mnt/ebs_export/ethereum", verbose=True)
+        format_cmds = [
+            "sudo mkdir /mnt/ebs_export/",
+            "sudo mkfs -t ext4 /dev/xvdf",
+            "sudo mount -t ext4 /dev/xvdf /mnt/ebs_export/",
+            "sudo mkdir /mnt/ebs_export/ethereum",
+            "sudo chown ec2-user:ec2-user /mnt/ebs_export/ethereum",
+        ]
+        ssh.run_many(instance_dns, "Format and mount attached EBS", format_cmds, verbose=True)
 
         # TODO: sanity check free space on ebs_export copy datadir
 
-        # TODO: copy data
+        # TODO: copy data to ens
         ssh.run(instance_dns, cmd="cp --recursive /mnt/sync/ethereum/* /mnt/ebs_export/ethereum/", verbose=True)
 
         # TODO: verify datadir
@@ -119,6 +122,9 @@ def _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_d
 
 
 def manage_initial_sync_server(ec2_client, az_name, data_dir):
+    if debug_run:
+        logger.error(f"debug_run set to True; will interrupt sync prematurely!")
+
     ec2_tag_name = "ethereum-initial-sync-server"
 
     success, instance_id, instance_ip, instance_dns, instance_type = \

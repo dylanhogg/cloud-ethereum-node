@@ -4,18 +4,34 @@ import subprocess
 from loguru import logger
 
 
-# TODO: make this module a class
+# TODO: make this module a class and set these in ctr
 geth_executable = "/home/ec2-user/geth"
+default_ssh_key = "../initial-sync-server/keys/id_rsa"
 
 
-def run(instance_dns, cmd, user="ec2-user", key="../keys/id_rsa", verbose=False):
-    # TODO: consider https://stackoverflow.com/questions/3586106/perform-commands-over-ssh-with-python
+def run_many(instance_dns, description, cmds, verbose=False):
+    if description is not None:
+        logger.info("Start: " + description)
+
+    for cmd in cmds:
+        run(instance_dns, cmd, verbose=verbose)
+
+    if description is not None:
+        logger.info("Complete: " + description)
+
+
+def run(instance_dns, cmd, user="ec2-user", key=None, verbose=False):
+    # TODO: consider using https://github.com/paramiko/paramiko
+    if key is None:
+        key = default_ssh_key
 
     if verbose:
-        logger.info(f"Running ssh cmd: {cmd}")
+        logger.info(f"ssh cmd: {cmd}")
+
     ssh_cmd = f'ssh -o "StrictHostKeyChecking no" -i "{key}" {user}@{instance_dns} "{cmd}"'
     out, err = subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
+    # Connection refused could be because the instance isn't ready yet
     if "connection refused" in err.decode().lower():
         logger.warning(f"Connection refused for ssh cmd: '{cmd}': {err.decode()}")
         logger.info(f"Pausing before retrying ssh cmd: '{cmd}'")
@@ -24,29 +40,37 @@ def run(instance_dns, cmd, user="ec2-user", key="../keys/id_rsa", verbose=False)
         if "connection refused" in err.decode().lower():
             raise RuntimeError(f"Connection refused (again) for ssh cmd: '{cmd}': {err.decode()}")
 
+    # Timed out is likely security group/firewall issue
     if "timed out" in err.decode().lower():
         raise RuntimeError(f"ssh timed out, check instance_dns and port 22 ingress allowed: {err.decode()}")
 
+    # Not all errors are critical, so just log them
     if len(err.decode()) > 0:
-        logger.warning(err.decode())
+        logger.warning(err.decode().lower())
 
     result = out.decode().strip()
     if verbose and len(result) > 0:
-        logger.info(f"ssh cmd {cmd} result: {result}")
+        logger.info(f"ssh cmd '{cmd}' result: {result}")
     return result
 
 
 def _rpc(instance_dns, data_dir, ethjs):
-    # TODO: call rcp server http.port 8545 directly - needs geth to startup with different options
+    # TODO: Consider calling rcp server http.port 8545 directly
+    #       Needs geth to startup with different options and open firewall port
     cmd = f"{geth_executable} attach ipc:{data_dir}/geth.ipc --exec '{ethjs}'"
     return run(instance_dns, cmd)
 
 
-def geth_version(instance_dns):  # TODO: can return "" if not running yet so do retry in this case
+def geth_version(instance_dns):
+    # This is a good method to verify geth is installed and the instance is ready
     cmd = f"{geth_executable} version"
     response = run(instance_dns, cmd)
     if len(response) == 0:
-        return "Unknown"
+        logger.warning(f"geth_version returned empty, pause before retry...")
+        time.sleep(60)
+        response = run(instance_dns, cmd)
+        if len(response) == 0:
+            raise RuntimeError(f"geth_version returned empty again")
     matches = [x for x in response.split("\n") if "version" in x.lower()]
     if len(matches) == 0:
         raise RuntimeError(f"Couldn't find verion information from 'geth version': {response}")
