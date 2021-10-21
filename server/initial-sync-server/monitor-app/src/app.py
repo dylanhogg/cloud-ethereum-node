@@ -7,7 +7,7 @@ from loguru import logger
 from library import ebs, ec2, ssh, geth_status
 
 
-def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name, instance_id, version, perc_block, ebs_factor=1.2):
+def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name, instance_id, instance_type, version, perc_block, ebs_factor=1.2):
     logger.info(f"Started process completed sync. Status '{status}', >{perc_block:.2f}% block")
 
     # if status == geth_status.GethStatusEnum.stopped_success:
@@ -19,6 +19,8 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
 
         ebs_size_gb = int(math.ceil(datadir_gb * ebs_factor / 10.0)) * 10  # Round up nearest 10GB
         logger.info(f"Calc size of new EBS is {ebs_size_gb:.2f}GB (x{ebs_factor:.2f} rounded up to nearest 10GB)")
+        logger.warning(f"Estimated cost for {ebs_size_gb:.2f}GB EBS is {(ebs_size_gb*0.1):.2f} USD/month "
+                       f"(us-east-1, gp2, no snapshot, {ebs_size_gb:.2f}GB * 0.10 USD)")
 
         # TODO: review device
         # TODO: check if created already by tag
@@ -31,9 +33,10 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
             {"Key": "env", "Value": "prd"},
             {"Key": "meta_sync_date", "Value": datetime.now().replace(microsecond=0).isoformat()},
             {"Key": "meta_geth_status", "Value": status.name},
-            {"Key": "meta_geth_perc_block", "Value": "{:.2f}".format(perc_block)},
+            {"Key": "meta_geth_perc_block", "Value": "{:.2f}%".format(perc_block)},
             {"Key": "meta_geth_version", "Value": version},
             {"Key": "meta_instance_id", "Value": instance_id},
+            {"Key": "meta_instance_type", "Value": instance_type},
             {"Key": "meta_device", "Value": ebs_device},
             {"Key": "meta_data_dir", "Value": data_dir},
             {"Key": "meta_size_gb", "Value": "{:.2f}".format(ebs_size_gb)},
@@ -99,7 +102,7 @@ def _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_d
 
         time.sleep(status_interval_secs)
 
-    return status, avail_pct, detail, max_perc_block
+    return status, instance_type, avail_pct, detail, max_perc_block
 
 
 def manage_initial_sync_server(ec2_client, az_name, data_dir):
@@ -128,11 +131,11 @@ def manage_initial_sync_server(ec2_client, az_name, data_dir):
     if version != expected_version:
         logger.warning(f"App tested with geth '{expected_version}' and your server is running '{version}'")
 
-    status, avail_pct, detail, perc_block = \
+    status, instance_type, avail_pct, detail, perc_block = \
         _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_dir)
 
     success = \
-        _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name, instance_id, version, perc_block)
+        _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name, instance_id, instance_type, version, perc_block)
 
     # TODO: start smaller instance, attach ebs and kick off ongoing sync server
 
