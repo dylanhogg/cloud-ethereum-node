@@ -7,7 +7,7 @@ AWS_AZ=us-east-1b
 PUBLIC_DNS=`cd infra; terraform output -raw public_dns`
 EC2_INSTANCE_ID=`cd infra; terraform output -raw ec2_instance_id`
 EBS_VOLUME_ID=cloud-ethereum-node-volume
-ETH_DATA_DIR=/mnt/ebs/ethereum
+ETH_DATA_DIR=/mnt/sync/ethereum
 
 ## Create public/private ssh keys
 ssh-keygen:

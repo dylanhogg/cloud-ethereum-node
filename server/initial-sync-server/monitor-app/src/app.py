@@ -7,11 +7,14 @@ from loguru import logger
 from library import ebs, ec2, ssh, geth_status
 
 
+debug_run = True
+terminate_instance = True
+
+
 def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name, instance_id, instance_type, version, perc_block, ebs_factor=1.2):
     logger.info(f"Started process completed sync. Status '{status}', >{perc_block:.2f}% block")
 
-    # if status == geth_status.GethStatusEnum.stopped_success:
-    if status == geth_status.GethStatusEnum.stopped_success or True:  # TEMP: for testing
+    if debug_run or status == geth_status.GethStatusEnum.stopped_success:
         datadir_size_mb = ssh.geth_du(instance_dns, data_dir)
         assert datadir_size_mb > 0
         datadir_gb = datadir_size_mb/1.024e+6  # TODO: GiB vs GB
@@ -19,8 +22,8 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
 
         ebs_size_gb = int(math.ceil(datadir_gb * ebs_factor / 10.0)) * 10  # Round up nearest 10GB
         logger.info(f"Calc size of new EBS is {ebs_size_gb:.2f}GB (x{ebs_factor:.2f} rounded up to nearest 10GB)")
-        logger.warning(f"Estimated cost for {ebs_size_gb:.2f}GB EBS is {(ebs_size_gb*0.1):.2f} USD/month "
-                       f"(us-east-1, gp2, no snapshot, {ebs_size_gb:.2f}GB * 0.10 USD)")
+        logger.warning(f"Estimated cost for {ebs_size_gb:.2f}GB EBS is ${(ebs_size_gb*0.1):.2f} USD/month "
+                       f"(us-east-1, gp2, no snapshot, {ebs_size_gb:.2f}GB * $0.10 USD)")
 
         # TODO: review device
         # TODO: check if created already by tag
@@ -59,7 +62,7 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
         # TODO: sanity check free space on ebs_export copy datadir
 
         # TODO: copy data
-        ssh.run(instance_dns, cmd="cp --recursive /mnt/ebs/ethereum/* /mnt/ebs_export/ethereum/", verbose=True)
+        ssh.run(instance_dns, cmd="cp --recursive /mnt/sync/ethereum/* /mnt/ebs_export/ethereum/", verbose=True)
 
         # TODO: verify datadir
 
@@ -67,7 +70,10 @@ def _process_completed_sync(instance_dns, status, ec2_client, data_dir, az_name,
         ssh.run(instance_dns, cmd="sudo umount /mnt/ebs_export", verbose=True)
 
         # TODO: terminate initial sync server
-        ec2.terminate_ec2_instance(ec2_client, instance_id)
+        if terminate_instance:
+            ec2.terminate_ec2_instance(ec2_client, instance_id)
+        else:
+            logger.warning(f"Skipping termination of {instance_type} instance {instance_id}")
 
         return True
     else:
@@ -81,6 +87,9 @@ def _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_d
     status_count = 0
     max_perc_block = -1
     while True:
+        if debug_run:
+            logger.warning(f"debug_run set to True; will interrupt sync prematurely!")
+
         status_count += 1
         status, avail_pct, detail, perc_block = geth_status.status(instance_dns, datadir_mount, data_dir)
         if perc_block > max_perc_block:
@@ -88,7 +97,7 @@ def _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_d
         logger.info(f"\nGETH STATUS #{status_count} ({instance_type}, {avail_pct:.2f}% disk available, {max_perc_block:.2f}% blocks):\n"
                     + "\n".join(detail))
 
-        if status != geth_status.GethStatusEnum.running:
+        if status.name.startswith("stopped"):
             logger.info(f"Exiting monitoring due to geth status {status}")
             break
 
@@ -99,6 +108,10 @@ def _wait_for_sync_completion(instance_dns, instance_type, datadir_mount, data_d
             logger.info("Disk usage:\n" + ssh.du(instance_dns, human=True))
             logger.error(f"Interrupting geth process {pid} due to only {avail_pct:.2f}% avaiable on volume")
             break
+
+        if debug_run and perc_block > 5.0:
+            logger.warning(f"Prematurely interrupt geth process in debug case for testing (perc_block {perc_block:.2f}%)")
+            ssh.geth_sigint(instance_dns)
 
         time.sleep(status_interval_secs)
 
@@ -120,13 +133,13 @@ def manage_initial_sync_server(ec2_client, az_name, data_dir):
     logger.info(f"Found EC2 InstanceId: {instance_id}, {instance_ip}, {instance_dns}, {instance_type}")
 
     # TODO: handle datadir_mount better
-    datadir_mount = "/mnt/ebs"  # i3
+    datadir_mount = "/mnt/sync"  # i3
     if instance_type.startswith("t4g"):
         datadir_mount = "/"  # t4g
     logger.info(f"datadir_mount = {datadir_mount} for {instance_type}")
 
     version = ssh.geth_version(instance_dns)
-    logger.warning(f"geth version '{version}'")
+    logger.info(f"geth version '{version}'")
     expected_version = "1.10.9-stable"
     if version != expected_version:
         logger.warning(f"App tested with geth '{expected_version}' and your server is running '{version}'")
@@ -149,7 +162,7 @@ def main():
     assert az_name is not None, "AWS_AZ environ is not set"
     ec2_client = boto3.client("ec2", region_name)
 
-    data_dir = "/mnt/ebs/ethereum"
+    data_dir = "/mnt/sync/ethereum"
 
     manage_initial_sync_server(ec2_client, az_name, data_dir)
 

@@ -2,7 +2,7 @@
 
 # arm64 / t4g.medium
 
-DATA_DIR="/mnt/ebs/ethereum"
+DATA_DIR="/mnt/sync/ethereum"
 
 echo "user_data started on arm64" >> /home/ec2-user/user_data.log
 echo `date` >> /home/ec2-user/user_data.log
@@ -26,7 +26,7 @@ chown ec2-user:ec2-user $DATA_DIR
 # Run geth on arm64 / t4g.medium
 nohup sudo -u ec2-user /home/ec2-user/geth --datadir $DATA_DIR --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
 chown ec2-user:ec2-user /home/ec2-user/geth_nohup.out
-# nohup /home/ec2-user/geth --datadir /mnt/ebs/ethereum --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
+# nohup /home/ec2-user/geth --datadir /mnt/sync/ethereum --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
 
 # BLOG: ./geth --datadir /mnt/nvm/ether --syncmode=fast --maxpeers=100 --cache=28000
 
