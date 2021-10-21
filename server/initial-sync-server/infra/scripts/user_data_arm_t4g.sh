@@ -8,6 +8,8 @@ echo "user_data started on arm64" >> /home/ec2-user/user_data.log
 echo `date` >> /home/ec2-user/user_data.log
 echo "datadir: $DATA_DIR" >> /home/ec2-user/user_data.log
 
+yum -y update
+
 # Download arm64 geth
 wget https://gethstore.blob.core.windows.net/builds/geth-linux-arm64-1.10.9-eae3b194.tar.gz
 tar -xzf geth-linux-arm64-1.10.9-eae3b194.tar.gz
