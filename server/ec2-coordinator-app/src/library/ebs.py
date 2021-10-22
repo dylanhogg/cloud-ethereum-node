@@ -1,6 +1,13 @@
 from loguru import logger
 
 
+def find_volumes_by_name(ec2_resource, name):
+    volumes = ec2_resource.volumes.filter(
+        Filters=[{"Name": "tag:Name", "Values": [name]}]
+    )
+    return volumes
+
+
 def create_and_attach_volume(ec2_client, az, attach_instance_id, device, size_gb, tags):
     # TODO: Validate device? An error occurred (InvalidParameterValue) when calling the AttachVolume operation:
     #       Invalid value "/dev/xvdf" for unixDevice. Attachment point /dev/xvdf is already in use

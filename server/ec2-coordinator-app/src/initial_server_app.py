@@ -1,10 +1,11 @@
+import os
 import time
 from loguru import logger
 from library import ec2, ssh
 from initial_server import wait_for_sync_completion, process_completed_sync
 
 
-def start(ec2_client, az_name, data_dir, debug_run, terminate_instance):
+def start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance):
     if debug_run:
         logger.error(f"debug_run set to True; will interrupt sync prematurely!")
 
@@ -41,3 +42,20 @@ def start(ec2_client, az_name, data_dir, debug_run, terminate_instance):
                                        instance_type, version, perc_block, debug_run, terminate_instance)
 
     logger.info(f"Finished initial server coordination with success = {success}")
+
+
+def main():
+    region_name = os.environ.get("AWS_REGION")
+    az_name = os.environ.get("AWS_AZ")
+    assert region_name is not None, "AWS_REGION environ is not set"
+    assert az_name is not None, "AWS_AZ environ is not set"
+
+    ec2_client = ec2.get_client(region_name)
+    data_dir = "/mnt/sync/ethereum"
+    debug_run = True
+    terminate_instance = True
+    start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance)
+
+
+if __name__ == "__main__":
+    main()

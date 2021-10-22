@@ -16,6 +16,10 @@ def get_client(region_name):
     return boto3.client("ec2", region_name)
 
 
+def get_resource(region_name):
+    return boto3.resource("ec2", region_name)
+
+
 def terminate_ec2_instance(ec2_client, instance_id):
     logger.warning(f"Requesting termination of instance_id: {instance_id}")
     response = ec2_client.terminate_instances(InstanceIds=[instance_id])

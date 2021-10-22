@@ -14,9 +14,13 @@ venv:
 clean:
 	rm -rf venv
 
-## Run the app
-run:
-	source venv/bin/activate ; PYTHONPATH='./src' python -m app
+## Run initial_server_app
+initial_server_app:
+	source venv/bin/activate ; PYTHONPATH='./src' python -m initial_server_app
+
+## Run ongoing_server_app
+ongoing_server_app:
+	source venv/bin/activate ; PYTHONPATH='./src' python -m ongoing_server_app
 
 
 #################################################################################
