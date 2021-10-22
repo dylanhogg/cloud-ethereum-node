@@ -1,7 +1,7 @@
 import time
-import initial_server
 from loguru import logger
 from library import ec2, ssh
+from initial_server import wait_for_sync_completion, process_completed_sync
 
 
 def start(ec2_client, az_name, data_dir, debug_run, terminate_instance):
@@ -34,10 +34,10 @@ def start(ec2_client, az_name, data_dir, debug_run, terminate_instance):
         logger.warning(f"App tested with geth '{expected_version}' and your server is running '{version}'")
 
     status, instance_type, avail_pct, detail, perc_block = \
-        initial_server.wait_for_sync_completion.wait(instance_dns, instance_type, datadir_mount, data_dir, debug_run)
+        wait_for_sync_completion.wait(instance_dns, instance_type, datadir_mount, data_dir, debug_run)
 
     success = \
-        initial_server.process_completed_sync.process(instance_dns, status, ec2_client, data_dir, az_name, instance_id,
-                                                      instance_type, version, perc_block, debug_run, terminate_instance)
+        process_completed_sync.process(instance_dns, status, ec2_client, data_dir, az_name, instance_id,
+                                       instance_type, version, perc_block, debug_run, terminate_instance)
 
     logger.info(f"Finished initial server coordination with success = {success}")
