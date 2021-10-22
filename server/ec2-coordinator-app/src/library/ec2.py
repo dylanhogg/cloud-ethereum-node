@@ -1,3 +1,4 @@
+import boto3
 from loguru import logger
 from pprint import pprint
 
@@ -9,6 +10,10 @@ def _get_attribute(instance, key):
         error = f"{key} not found in response: {instance}"
         logger.error(error)
         raise RuntimeError(error)
+
+
+def get_client(region_name):
+    return boto3.client("ec2", region_name)
 
 
 def terminate_ec2_instance(ec2_client, instance_id):
