@@ -4,15 +4,32 @@ from loguru import logger
 from library import ebs, ec2, ssh, geth_status
 
 
-def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, instance_type,
-            version, perc_block, highest_block, current_block, debug_run, terminate_instance, ebs_factor=1.2):
-    logger.info(f"Started process completed sync. Status '{status}', >{perc_block:.2f}% block")
+def parse_block_info(instance_dns):
+    try:
+        # Expected format current_block,highest_block,...
+        block_info = ssh.run(instance_dns, "cat /home/ec2-user/geth_block_info.txt")
+        parts = block_info.split(",")
+        if len(parts) < 2:
+            return -1, -1, -1
+        perc = int(parts[0])*100/int(parts[1])
+        return parts[0], parts[1], f"{perc:.2f}%"
+    except Exception as ex:
+        logger.warning(f"Couldn't parse block_info: {ex}")
+        return -1, -1, -1
 
-    uptime_pretty = ssh.uptime_pretty(instance_dns)
 
-    if debug_run or status == geth_status.GethStatusEnum.stopped_success:
+def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instance_id, instance_type,
+            version, perc_block, highest_block, current_block, debug_run, force_save_to_ebs,
+            terminate_instance, ebs_factor=1.2):
+    logger.info(f"Started process completed sync. Status '{status}'")
+
+    if debug_run or force_save_to_ebs or status == geth_status.GethStatusEnum.stopped_success:
         datadir_size_mb = ssh.geth_du(instance_dns, data_dir)
         assert datadir_size_mb > 0
+
+        uptime_pretty = ssh.uptime_pretty(instance_dns)
+        (current_block, highest_block, perc_block) = parse_block_info(instance_dns)
+
         datadir_gb = datadir_size_mb/1.024e+6  # TODO: GiB vs GB
         logger.info(f"Size of datadir is {datadir_gb:.2f}GB")
 
@@ -30,15 +47,15 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
             {"Key": "deployment", "Value": "boto"},
             {"Key": "app_name", "Value": "cloud-ethereum-node"},
             {"Key": "env", "Value": "prd"},
+            {"Key": "meta_app_ver", "Value": app_ver},
             {"Key": "meta_sync_date", "Value": datetime.now().replace(microsecond=0).isoformat()},
             {"Key": "meta_ec2_uptime", "Value": uptime_pretty},
             {"Key": "meta_ec2_instance_id", "Value": instance_id},
             {"Key": "meta_ec2_instance_type", "Value": instance_type},
             {"Key": "meta_geth_status", "Value": status.name},
-            {"Key": "meta_geth_perc_block", "Value": "{:.2f}%".format(perc_block)},
-            {"Key": "meta_geth_highest_block", "Value": str(highest_block)},
-            {"Key": "meta_geth_current_block", "Value": str(current_block)},
-            {"Key": "meta_geth_diff_block", "Value": str(highest_block - current_block)},
+            {"Key": "meta_geth_current_block", "Value": current_block},
+            {"Key": "meta_geth_highest_block", "Value": highest_block},
+            {"Key": "meta_geth_perc_block", "Value": perc_block},
             {"Key": "meta_geth_version", "Value": version},
             {"Key": "meta_device", "Value": ebs_device},
             {"Key": "meta_data_dir", "Value": data_dir},
@@ -48,7 +65,7 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
             {"Key": "meta_terminate_instance", "Value": str(terminate_instance)},
         ]
 
-        logger.info(f"Create and attach {ebs_size_gb:.2f}GB EBS volume to instance {instance_id}")
+        logger.info(f"Create and attach {ebs_size_gb:.2f}GB EBS volume to instance {instance_id} with volume Tags: {ebs_tags}")
         ebs_success, volume_id = ebs.create_and_attach_volume(
             ec2_client, az_name, instance_id, device=ebs_device, size_gb=ebs_size_gb, tags=ebs_tags)
         if not ebs_success:

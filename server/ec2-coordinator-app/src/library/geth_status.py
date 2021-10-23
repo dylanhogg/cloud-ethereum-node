@@ -44,7 +44,7 @@ def status(instance_dns, datadir_mount, data_dir):
         success, current_block, highest_block = ssh.rpc_syncing(instance_dns, data_dir)
         if success:
             diff_block = highest_block - current_block
-            perc_block = (current_block*100/highest_block)
+            perc_block = (current_block*100/highest_block) if highest_block > 0 else -1
             detail.append(f"geth syncing: current {current_block:,}, highest {highest_block:,}, diff {diff_block:,}, {perc_block:.2f}%")
         else:
             detail.append(f"geth syncing: false")

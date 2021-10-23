@@ -5,7 +5,7 @@ from library import ec2, ssh
 from initial_server import wait_for_sync_completion, process_completed_sync
 
 
-def start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance):
+def start_app(ec2_client, app_ver, az_name, data_dir, debug_run, force_save_to_ebs, terminate_instance):
     if debug_run:
         logger.error(f"debug_run set to True; will interrupt sync prematurely!")
 
@@ -41,9 +41,9 @@ def start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance):
         wait_for_sync_completion.wait(instance_dns, instance_type, datadir_mount, data_dir, debug_run)
 
     success = \
-        process_completed_sync.process(instance_dns, status, ec2_client, data_dir, az_name, instance_id,
+        process_completed_sync.process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instance_id,
                                        instance_type, version, perc_block, highest_block, current_block,
-                                       debug_run, terminate_instance)
+                                       debug_run, force_save_to_ebs, terminate_instance)
 
     logger.info(f"Finished initial server coordination with success = {success}")
 
@@ -55,10 +55,13 @@ def main():
     assert az_name is not None, "AWS_AZ environ is not set"
 
     ec2_client = ec2.get_client(region_name)
+
+    app_ver = "0.1"
     data_dir = "/mnt/sync/ethereum"
-    debug_run = True
+    debug_run = False
+    force_save_to_ebs = True
     terminate_instance = True
-    start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance)
+    start_app(ec2_client, app_ver, az_name, data_dir, debug_run, force_save_to_ebs, terminate_instance)
 
 
 if __name__ == "__main__":
