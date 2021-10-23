@@ -55,7 +55,7 @@ def main():
 
     ec2_client = ec2.get_client(region_name)
 
-    app_ver = "0.2"
+    app_ver = "0.3"
     data_dir = "/mnt/sync/ethereum"
     debug_run = False
     force_save_to_ebs = False

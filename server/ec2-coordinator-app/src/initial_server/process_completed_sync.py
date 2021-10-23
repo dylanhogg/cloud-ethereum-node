@@ -56,12 +56,13 @@ def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instan
             {"Key": "meta_geth_highest_block", "Value": highest_block},
             {"Key": "meta_geth_perc_block", "Value": perc_block},
             {"Key": "meta_geth_version", "Value": version},
-            {"Key": "meta_device", "Value": ebs_device},
-            {"Key": "meta_data_dir", "Value": data_dir},
-            {"Key": "meta_size_gb", "Value": "{:.2f}".format(ebs_size_gb)},
-            {"Key": "meta_datadir_gb", "Value": "{:.2f}".format(datadir_gb)},
-            {"Key": "meta_debug_run", "Value": str(debug_run)},
-            {"Key": "meta_terminate_instance", "Value": str(terminate_instance)},
+            {"Key": "meta_ebs_device", "Value": ebs_device},
+            {"Key": "meta_ebs_data_dir", "Value": data_dir},
+            {"Key": "meta_ebs_datadir_gb", "Value": "{:.2f}".format(datadir_gb)},
+            {"Key": "meta_ebs_size_gb", "Value": "{:.2f}".format(ebs_size_gb)},
+            {"Key": "meta_config_debug_run", "Value": str(debug_run)},
+            {"Key": "meta_config_force_save_to_ebs", "Value": str(force_save_to_ebs)},
+            {"Key": "meta_config_terminate_instance", "Value": str(terminate_instance)},
         ]
 
         logger.info(f"Create and attach {ebs_size_gb:.2f}GB EBS volume to instance {instance_id} with volume Tags: {ebs_tags}")
