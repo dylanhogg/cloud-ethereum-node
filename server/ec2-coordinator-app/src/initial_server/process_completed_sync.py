@@ -19,8 +19,7 @@ def parse_block_info(instance_dns):
 
 
 def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instance_id, instance_type,
-            version, perc_block, highest_block, current_block, debug_run, force_save_to_ebs,
-            terminate_instance, ebs_factor=1.2):
+            version, debug_run, force_save_to_ebs, terminate_instance, ebs_factor=1.2):
     logger.info(f"Started process completed sync. Status '{status}'")
 
     if debug_run or force_save_to_ebs or status == geth_status.GethStatusEnum.stopped_success:
