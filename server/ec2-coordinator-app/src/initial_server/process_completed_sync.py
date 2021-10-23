@@ -53,13 +53,22 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
             "sudo mount -t ext4 /dev/xvdf /mnt/ebs_export/",
             "sudo mkdir /mnt/ebs_export/ethereum",
             "sudo chown ec2-user:ec2-user /mnt/ebs_export/ethereum",
+            "sudo mkdir /mnt/ebs_export/initial_sync_metadata",
+            "sudo chown ec2-user:ec2-user /mnt/ebs_export/initial_sync_metadata",
         ]
         ssh.run_many(instance_dns, "Format and mount attached EBS", format_cmds, verbose=True)
 
         # TODO: sanity check free space on ebs_export copy datadir
 
-        # TODO: copy data to ens
-        ssh.run(instance_dns, cmd="cp --recursive /mnt/sync/ethereum/* /mnt/ebs_export/ethereum/", verbose=True)
+        # TODO: copy data to ebs_export
+        format_cmds = [
+            "cp --recursive /mnt/sync/ethereum/* /mnt/ebs_export/ethereum/",
+            "cp /home/ec2-user/user_data.log /mnt/ebs_export/initial_sync_metadata/user_data.log",
+            "cp /home/ec2-user/geth_cmd.txt /mnt/ebs_export/initial_sync_metadata/geth_cmd.txt",
+            "head -n 1000 /home/ec2-user/geth_nohup.out >> /mnt/ebs_export/initial_sync_metadata/head_geth_nohup.out",
+            "tail -n 1000 /home/ec2-user/geth_nohup.out >> /mnt/ebs_export/initial_sync_metadata/tail_geth_nohup.out",
+        ]
+        ssh.run_many(instance_dns, "Copy chaindata and metadata to attached EBS", format_cmds, verbose=True)
 
         # TODO: verify datadir
 

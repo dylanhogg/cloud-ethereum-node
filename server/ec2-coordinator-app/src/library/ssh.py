@@ -155,7 +155,6 @@ def geth_sigint(instance_dns):
     return pid
 
 
-# TODO: make wrapper from geth.py
 def rpc_syncing(instance_dns, data_dir):
     ethjs = "eth.syncing"
     response = _rpc(instance_dns, data_dir, ethjs)

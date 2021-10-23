@@ -32,7 +32,7 @@ def wait(instance_dns, instance_type, datadir_mount, data_dir,
             logger.error(f"Interrupting geth process {pid} due to only {avail_pct:.2f}% avaiable on volume")
             break
 
-        if debug_run and perc_block > 5.0:
+        if debug_run and perc_block > 2.0:
             logger.warning(f"Prematurely interrupt geth process in debug case for testing (perc_block {perc_block:.2f}%)")
             ssh.geth_sigint(instance_dns)
 
