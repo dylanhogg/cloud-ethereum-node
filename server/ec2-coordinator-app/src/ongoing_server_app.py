@@ -1,7 +1,7 @@
 import os
 import time
 from loguru import logger
-from library import ec2, ssh
+from library import ec2, ssh, log, env
 from ongoing_server import initialise_ongoing_instance
 
 
@@ -35,7 +35,7 @@ def start_app(ec2_client, ec2_resource, az_name, data_dir, debug_run):
         logger.warning(f"App tested with geth '{expected_version}' and your server is running '{version}'")
 
     # Initialise ongoing instance
-    initialise_instance.start(ec2_resource, az_name, data_dir, debug_run)
+    initialise_ongoing_instance.start(ec2_resource, az_name, data_dir, debug_run)
 
     logger.info(f"Finished ongoing server coordination with success = {success}")
 
@@ -46,8 +46,10 @@ def testing(ec2_client, ec2_resource, az_name, data_dir, debug_run):
 
 
 def main():
-    region_name = os.environ.get("AWS_REGION")
-    az_name = os.environ.get("AWS_AZ")
+    log.configure()
+
+    region_name = env.get("AWS_REGION")
+    az_name = env.get("AWS_AZ")
     assert region_name is not None, "AWS_REGION environ is not set"
     assert az_name is not None, "AWS_AZ environ is not set"
 

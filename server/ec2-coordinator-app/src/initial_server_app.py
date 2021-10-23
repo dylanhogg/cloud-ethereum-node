@@ -1,7 +1,7 @@
 import os
 import time
 from loguru import logger
-from library import ec2, ssh
+from library import ec2, ssh, log, env
 from initial_server import wait_for_sync_completion, process_completed_sync
 
 
@@ -48,8 +48,10 @@ def start_app(ec2_client, app_ver, az_name, data_dir, debug_run, force_save_to_e
 
 
 def main():
-    region_name = os.environ.get("AWS_REGION")
-    az_name = os.environ.get("AWS_AZ")
+    log.configure()
+
+    region_name = env.get("AWS_REGION")
+    az_name = env.get("AWS_AZ")
     assert region_name is not None, "AWS_REGION environ is not set"
     assert az_name is not None, "AWS_AZ environ is not set"
 
