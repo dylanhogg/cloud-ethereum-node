@@ -45,6 +45,7 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
             {"Key": "meta_size_gb", "Value": "{:.2f}".format(ebs_size_gb)},
             {"Key": "meta_datadir_gb", "Value": "{:.2f}".format(datadir_gb)},
             {"Key": "meta_debug_run", "Value": str(debug_run)},
+            {"Key": "meta_terminate_instance", "Value": str(terminate_instance)},
         ]
 
         logger.info(f"Create and attach {ebs_size_gb:.2f}GB EBS volume to instance {instance_id}")
