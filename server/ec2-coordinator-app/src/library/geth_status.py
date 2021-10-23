@@ -24,6 +24,9 @@ def status(instance_dns, datadir_mount, data_dir):
     complete = False
     empty_geth_dir = False
     disk_full = False
+    perc_block = -1
+    highest_block = -1
+    current_block = -1
 
     detail = [
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -33,7 +36,6 @@ def status(instance_dns, datadir_mount, data_dir):
 
     # Process ID
     pid = ssh.geth_pid(instance_dns)
-    perc_block = -1
     if pid is None:
         detail.append("geth stopped (no pid)")
     else:
@@ -135,4 +137,4 @@ def status(instance_dns, datadir_mount, data_dir):
         geth_status = GethStatusEnum.stopped_success
 
     detail.insert(1, geth_status.name)
-    return geth_status, avail_pct, detail, perc_block
+    return geth_status, avail_pct, detail, perc_block, highest_block, current_block

@@ -5,7 +5,7 @@ from library import ebs, ec2, ssh, geth_status
 
 
 def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, instance_type,
-            version, perc_block, debug_run, terminate_instance, ebs_factor=1.2):
+            version, perc_block, highest_block, current_block, debug_run, terminate_instance, ebs_factor=1.2):
     logger.info(f"Started process completed sync. Status '{status}', >{perc_block:.2f}% block")
 
     if debug_run or status == geth_status.GethStatusEnum.stopped_success:
@@ -17,7 +17,7 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
         ebs_size_gb = int(math.ceil(datadir_gb * ebs_factor / 10.0)) * 10  # Round up nearest 10GB
         logger.info(f"Calc size of new EBS is {ebs_size_gb:.2f}GB (x{ebs_factor:.2f} rounded up to nearest 10GB)")
         logger.warning(f"Estimated cost for {ebs_size_gb:.2f}GB EBS is ${(ebs_size_gb*0.1):.2f} USD/month "
-                       f"(us-east-1, gp2, no snapshot, {ebs_size_gb:.2f}GB * $0.10 USD)")
+                       f"(assuming us-east-1, gp2, no snapshot, {ebs_size_gb:.2f}GB * $0.10 USD)")
 
         # TODO: review device
         # TODO: check if created already by tag
@@ -31,6 +31,9 @@ def process(instance_dns, status, ec2_client, data_dir, az_name, instance_id, in
             {"Key": "meta_sync_date", "Value": datetime.now().replace(microsecond=0).isoformat()},
             {"Key": "meta_geth_status", "Value": status.name},
             {"Key": "meta_geth_perc_block", "Value": "{:.2f}%".format(perc_block)},
+            {"Key": "meta_geth_highest_block", "Value": str(highest_block)},
+            {"Key": "meta_geth_current_block", "Value": str(current_block)},
+            {"Key": "meta_geth_diff_block", "Value": str(highest_block - current_block)},
             {"Key": "meta_geth_version", "Value": version},
             {"Key": "meta_instance_id", "Value": instance_id},
             {"Key": "meta_instance_type", "Value": instance_type},

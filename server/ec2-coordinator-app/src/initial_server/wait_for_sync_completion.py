@@ -9,15 +9,24 @@ def wait(instance_dns, instance_type, datadir_mount, data_dir,
 
     status_count = 0
     max_perc_block = -1
+    max_highest_block = -1
+    max_current_block = -1
     while True:
         if debug_run:
             logger.warning(f"debug_run set to True; will interrupt sync prematurely!")
 
         status_count += 1
-        status, avail_pct, detail, perc_block = geth_status.status(instance_dns, datadir_mount, data_dir)
+        status, avail_pct, detail, perc_block, highest_block, current_block = \
+            geth_status.status(instance_dns, datadir_mount, data_dir)
+
         if perc_block > max_perc_block:
             max_perc_block = perc_block
-        logger.info(f"\nGETH STATUS #{status_count} ({instance_type}, {avail_pct:.2f}% disk available, {max_perc_block:.2f}% blocks):\n"
+        if highest_block > max_highest_block:
+            max_highest_block = highest_block
+        if current_block > max_current_block:
+            max_current_block = current_block
+        logger.info(f"\nGETH STATUS #{status_count} ({instance_type}, {avail_pct:.2f}% disk available, "
+                    f"{current_block:,} current, {highest_block:,} highest, {max_perc_block:.2f}% blocks):\n"
                     + "\n".join(detail))
 
         if status.name.startswith("stopped"):
@@ -33,9 +42,9 @@ def wait(instance_dns, instance_type, datadir_mount, data_dir,
             break
 
         if debug_run and perc_block > 2.0:
-            logger.warning(f"Prematurely interrupt geth process in debug case for testing (perc_block {perc_block:.2f}%)")
+            logger.warning(f"Prematurely interrupting geth process in debug case for testing (perc_block {perc_block:.2f}%)...")
             ssh.geth_sigint(instance_dns)
 
         time.sleep(status_interval_secs)
 
-    return status, instance_type, avail_pct, detail, max_perc_block
+    return status, instance_type, avail_pct, detail, max_perc_block, max_highest_block, max_current_block
