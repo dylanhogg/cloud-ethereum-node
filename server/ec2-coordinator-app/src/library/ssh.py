@@ -147,6 +147,10 @@ def uptime(instance_dns):
     return run(instance_dns, "uptime")
 
 
+def uptime_pretty(instance_dns):
+    return run(instance_dns, "uptime -p")
+
+
 def geth_sigint(instance_dns):
     pid = geth_pid(instance_dns)
     if pid is None:
@@ -158,9 +162,11 @@ def geth_sigint(instance_dns):
 def rpc_syncing(instance_dns, data_dir):
     ethjs = "eth.syncing"
     response = _rpc(instance_dns, data_dir, ethjs)
+    current_block = -1
+    highest_block = -1
 
     if response == "false":
-        return False, None, None,
+        return False, current_block, highest_block
 
     try:
         current_block = -1
@@ -174,7 +180,7 @@ def rpc_syncing(instance_dns, data_dir):
         return True, current_block, highest_block
     except Exception as ex:
         logger.error(f"Could not parse geth rpc response: {response} due to {ex}")
-        return False, None, None
+        return False, current_block, highest_block
 
 
 

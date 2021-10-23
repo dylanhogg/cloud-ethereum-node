@@ -31,7 +31,7 @@ def status(instance_dns, datadir_mount, data_dir):
     detail = [
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         f"Instance DNS: {instance_dns}",
-        f"Instance uptime: {ssh.uptime(instance_dns)})"
+        f"Instance uptime: {ssh.uptime(instance_dns)}"
     ]
 
     # Process ID

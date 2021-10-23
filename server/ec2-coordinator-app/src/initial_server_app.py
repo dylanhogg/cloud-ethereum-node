@@ -23,9 +23,12 @@ def start_app(ec2_client, az_name, data_dir, debug_run, terminate_instance):
     logger.info(f"Found EC2 InstanceId: {instance_id}, {instance_ip}, {instance_dns}, {instance_type}")
 
     # TODO: handle datadir_mount better
-    datadir_mount = "/mnt/sync"  # i3
-    if instance_type.startswith("t4g"):
-        datadir_mount = "/"  # t4g
+    if instance_type.startswith("i3"):
+        datadir_mount = "/mnt/sync"
+    elif instance_type.startswith("t4g"):
+        datadir_mount = "/"
+    else:
+        raise RuntimeError("Untested instance type, don't know datadir_mount location.")
     logger.info(f"datadir_mount = {datadir_mount} for {instance_type}")
 
     version = ssh.geth_version(instance_dns)
