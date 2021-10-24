@@ -4,7 +4,7 @@ from library import ssh, geth_status
 
 
 def wait(instance_dns, instance_type, datadir_mount, data_dir,
-         debug_run, interrupt_avail_pct=3.0, status_interval_secs=15):
+         debug_run, interrupt_avail_pct, status_interval_secs):
     logger.info(f"Monitoring geth synchronisation. This should take several hours to complete...")
 
     status_count = 0

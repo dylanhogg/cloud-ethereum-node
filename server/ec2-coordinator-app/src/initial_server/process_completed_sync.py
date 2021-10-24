@@ -4,22 +4,8 @@ from loguru import logger
 from library import ebs, ec2, ssh, geth_status
 
 
-def parse_block_info(instance_dns):
-    try:
-        # Expected format current_block,highest_block,...
-        block_info = ssh.run(instance_dns, "cat /home/ec2-user/geth_block_info.txt")
-        parts = block_info.split(",")
-        if len(parts) < 2:
-            return -1, -1, -1
-        perc = int(parts[0])*100/int(parts[1])
-        return parts[0], parts[1], f"{perc:.2f}%"
-    except Exception as ex:
-        logger.warning(f"Couldn't parse block_info: {ex}")
-        return -1, -1, -1
-
-
 def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instance_id, instance_type,
-            version, debug_run, force_save_to_ebs, terminate_instance, ebs_factor=1.2):
+            version, debug_run, force_save_to_ebs, terminate_instance, ebs_factor):
     logger.info(f"Started process completed sync. Status '{status}'")
 
     if debug_run or force_save_to_ebs or status == geth_status.GethStatusEnum.stopped_success:
@@ -27,7 +13,9 @@ def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instan
         assert datadir_size_mb > 0
 
         uptime_pretty = ssh.uptime_pretty(instance_dns)
-        (current_block, highest_block, perc_block) = parse_block_info(instance_dns)
+        (current_block, highest_block, perc_block) = ssh.get_block_info(instance_dns)
+
+        geth_cmd = ssh.get_geth_cmd(instance_dns)
 
         datadir_gb = datadir_size_mb/1.024e+6  # TODO: GiB vs GB
         logger.info(f"Size of datadir is {datadir_gb:.2f}GB")
@@ -56,6 +44,7 @@ def process(instance_dns, app_ver, status, ec2_client, data_dir, az_name, instan
             {"Key": "meta_geth_highest_block", "Value": highest_block},
             {"Key": "meta_geth_perc_block", "Value": perc_block},
             {"Key": "meta_geth_version", "Value": version},
+            {"Key": "meta_geth_cmd", "Value": geth_cmd},
             {"Key": "meta_ebs_device", "Value": ebs_device},
             {"Key": "meta_ebs_data_dir", "Value": data_dir},
             {"Key": "meta_ebs_datadir_gb", "Value": "{:.2f}".format(datadir_gb)},

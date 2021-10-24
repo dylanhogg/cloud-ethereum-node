@@ -183,4 +183,27 @@ def rpc_syncing(instance_dns, data_dir):
         return False, current_block, highest_block
 
 
+def get_block_info(instance_dns):
+    try:
+        # Expected format current_block,highest_block,...
+        block_info = run(instance_dns, "cat /home/ec2-user/geth_block_info.txt")
+        parts = block_info.split(",")
+        if len(parts) < 2:
+            return -1, -1, -1
+        perc = int(parts[0])*100/int(parts[1])
+        return parts[0], parts[1], f"{perc:.2f}%"
+    except Exception as ex:
+        logger.warning(f"Couldn't parse block_info: {ex}")
+        return -1, -1, -1
+
+
+def get_geth_cmd(instance_dns, max_size=255):
+    try:
+        geth_cmd = run(instance_dns, "cat /home/ec2-user/geth_cmd.txt")
+        if len(geth_cmd) > max_size:
+            return geth_cmd[0:max_size]
+        return geth_cmd
+    except Exception as ex:
+        logger.warning(f"Couldn't get geth_cmd: {ex}")
+        return "Unknown"
 
