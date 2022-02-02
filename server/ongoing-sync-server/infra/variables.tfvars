@@ -1,7 +1,7 @@
 aws_profile="prd-non-tf-905234897161"
 region="us-east-1"
 availability_zone="us-east-1b"
-local_public_ip4_address="101.184.148.175"  # TODO: get dynamically?
+local_public_ip4_address="101.184.154.76"  # TODO: get dynamically?
 
 # ARM t4g.medium
 ongoing_sync_server_ami="ami-0e341fcaad89c3650"  # Amazon Linux 2 AMI (HVM), SSD Volume Type (64-bit Arm)
