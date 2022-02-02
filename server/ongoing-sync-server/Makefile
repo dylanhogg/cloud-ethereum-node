@@ -65,7 +65,6 @@ tf-plan:
 ## TF apply
 tf-apply: tf-plan
 	cd infra; terraform apply -var-file=variables.tfvars -auto-approve; cd -
-	# cd infra; terraform apply -var-file=variables.tfvars; cd -
 
 ## TF output
 tf-output:
@@ -74,7 +73,6 @@ tf-output:
 ## TF destroy
 tf-destroy:
 	cd infra; terraform destroy -var-file=variables.tfvars -auto-approve; cd -
-	# cd infra; terraform destroy -var-file=variables.tfvars; cd -
 
 
 #################################################################################
