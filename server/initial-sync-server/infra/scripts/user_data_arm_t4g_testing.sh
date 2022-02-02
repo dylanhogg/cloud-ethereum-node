@@ -3,7 +3,7 @@
 # arm64 / t4g.medium
 
 DATA_DIR="/mnt/sync/ethereum"
-GETH_VER="geth-linux-arm64-1.10.9-eae3b194"
+GETH_VER="geth-linux-arm64-1.10.15-8be800ff"
 GETH_CMD="/home/ec2-user/geth --datadir $DATA_DIR --nousb --syncmode snap --exitwhensynced"
 
 echo "user_data started on arm64" >> /home/ec2-user/user_data.log

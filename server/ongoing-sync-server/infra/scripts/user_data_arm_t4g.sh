@@ -11,9 +11,9 @@ echo "datadir: $DATA_DIR" >> /home/ec2-user/user_data.log
 yum -y update
 
 # Download arm64 geth
-wget https://gethstore.blob.core.windows.net/builds/geth-linux-arm64-1.10.9-eae3b194.tar.gz
-tar -xzf geth-linux-arm64-1.10.9-eae3b194.tar.gz
-mv geth-linux-arm64-1.10.9-eae3b194/geth /home/ec2-user/geth
+wget https://gethstore.blob.core.windows.net/builds/geth-linux-arm64-1.10.15-8be800ff.tar.gz
+tar -xzf geth-linux-arm64-1.10.15-8be800ff.tar.gz
+mv geth-linux-arm64-1.10.15-8be800ff/geth /home/ec2-user/geth
 chown ec2-user:ec2-user /home/ec2-user/geth
 
 # Mount disks - not requied on t4g
@@ -24,6 +24,8 @@ chown ec2-user:ec2-user /home/ec2-user/geth
 # Create datadir
 mkdir -p $DATA_DIR
 chown ec2-user:ec2-user $DATA_DIR
+
+# TODO: get geth running...
 
 # Run geth on arm64 / t4g.medium
 # nohup sudo -u ec2-user /home/ec2-user/geth --datadir $DATA_DIR --nousb --syncmode snap --exitwhensynced &> /home/ec2-user/geth_nohup.out &
