@@ -1,9 +1,9 @@
-boto3==1.19.1
-botocore==1.22.1
+boto3==1.20.46
+botocore==1.23.46
 jmespath==0.10.0
-loguru==0.5.3
+loguru==0.6.0
 python-dateutil==2.8.2
-python-dotenv==0.19.1
+python-dotenv==0.19.2
 s3transfer==0.5.0
 six==1.16.0
-urllib3==1.26.7
+urllib3==1.26.8
